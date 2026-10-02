@@ -1,0 +1,8 @@
+[Unit]
+Description=RPG Library: проверка обновлений каждые 5 минут
+
+[Timer]
+OnCalendar=*:0/5
+
+[Install]
+WantedBy=timers.target

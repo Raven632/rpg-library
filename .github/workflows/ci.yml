@@ -1,0 +1,94 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "main" ] # Запускает пайплайн при прямом пуше
+  pull_request:
+    branches: [ "main" ] # Проверяет код ДО слияния чужих веток
+
+jobs:
+  build-and-test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+    - name: Скачивание кода
+      uses: actions/checkout@v4
+
+    - name: Настройка Node.js 24
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+
+    - name: Установка пакетов (Strict Mode)
+      working-directory: ./api
+      run: npm ci
+
+    - name: Запуск тестов
+      working-directory: ./api
+      env:
+        REDIS_URL: redis://localhost:6379
+      run: npm test
+      
+  build-frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Скачивание кода
+      uses: actions/checkout@v4
+
+    - name: Настройка Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Установка пакетов (Strict Mode)
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Сборка фронтенда
+      working-directory: ./frontend
+      run: npm run build
+
+  # Тесты и сборка прошли — ветка deploy переезжает на этот коммит. Сервер забирает именно её
+  # (deploy/pull-deploy.sh): так ему не нужно спрашивать у API GitHub, зелёный ли CI, — у приватного
+  # репозитория этот вопрос без токена не задать. Более старый коммит, чей CI закончился позже,
+  # ветку назад не двигает
+  mark-deployable:
+    name: Mark for deploy
+    needs: [ build-and-test, build-frontend ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+    - name: Скачивание кода
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Ветка deploy — на этот коммит
+      run: |
+        git fetch origin deploy || true
+        if git rev-parse -q --verify origin/deploy >/dev/null && git merge-base --is-ancestor HEAD origin/deploy; then
+          echo "deploy уже на этом коммите или новее"
+        else
+          git push origin HEAD:refs/heads/deploy
+        fi
+

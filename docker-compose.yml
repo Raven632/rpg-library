@@ -1,0 +1,50 @@
+services:
+  # ====================================
+  # 2. Кэш и Очереди (Redis)
+  # ====================================
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    logging: &logging
+      # Журнал контейнера не растёт без конца: три файла по 10 МБ
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Порт наружу не публикуем: Redis без пароля, бэкенд ходит к нему
+    # по внутренней сети Docker (redis://redis:6379)
+
+  # ====================================
+  # 3. Твой Бэкенд
+  # ====================================
+  rpg-library:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${HTTP_PORT:-80}:3000"
+      # Игры — на своём адресе, отдельно от библиотеки (api/src/routes/play.js)
+      - "${GAME_PORT:-8081}:3001"
+    volumes:
+      - ${GAMES_HOST_DIR:-./games}:/games
+    # Подключаем наш файл с секретами. Он необязателен: без него сервер
+    # стартует на значениях по умолчанию, поэтому «скачал и запустил» работает.
+    env_file:
+      - path: .env
+        required: false
+    # Эти переменные перекроют те, что в .env (если есть совпадения)
+    environment:
+      - GAMES_DIR=/games
+      - NODE_ENV=production
+    restart: unless-stopped
+    logging: *logging
+    # «Жив ли сервер» — видно в docker ps (healthy / unhealthy): отвечает ли страница входа
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/setup/status').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 1m
+      timeout: 10s
+      start_period: 2m
+      retries: 3
+    # Говорим Докеру: "Не запускай бэкенд, пока не поднимутся базы!"
+    depends_on:
+      - redis
