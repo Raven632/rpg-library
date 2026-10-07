@@ -39,7 +39,7 @@ const createSavesRouter = require('./src/routes/saves.js');
 const itchRouter = require('./src/routes/itch.js');
 const wishlistRouter = require('./src/routes/wishlist.js');
 const createTelegramRouter = require('./src/routes/telegram.js');
-const { createGameApp, serveGameFile, gameKey, revOf, relFrom, isGameId } = require('./src/routes/play.js');
+const { createGameApp, serveGameFile, gameKey, revOf, relFrom, isGameId, fixBarePercent } = require('./src/routes/play.js');
 const { findGameFolder, getFolderSize } = require('./src/utils/archive.js');
 const { GAMES_DIR, EXTRACT_TMP, SAVES_DIR, AUDIOCACHE, OLD_DIR, SYSTEM_DIRS } = require('./src/config/index.js');
 const { backfillProgress, updateProgress } = require('./src/utils/saveprogress.js');
@@ -97,6 +97,9 @@ setIo(io);
 // ============================================================================
 // [3] ГЛОБАЛЬНЫЕ MIDDLEWARE И НАСТРОЙКА ПАПОК
 // ============================================================================
+// Голый «%» в адресе (картинка «$Hero%(8).png» у MV 1.6) — знак процента, а не ошибка: так игры
+// работают и без отдельного сервера игр (GAME_ISOLATION=off)
+app.use(fixBarePercent);
 app.use(compression());
 // Тело JSON у нас обычно в несколько килобайт (метаданные, форма входа), и 1 МБ
 // хватает с запасом: 50 МБ позволяли любому неавторизованному клиенту занимать

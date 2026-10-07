@@ -253,6 +253,16 @@ async function serveGameFile(req, res, next, { rel, prefix, inject, cache = fals
     next();
 }
 
+// «%» без двух шестнадцатеричных цифр за ним — просто знак процента. MV 1.6 раскодирует путь картинки
+// перед загрузкой (ImageManager.loadNormalBitmap → Bitmap.load(decodeURIComponent(path))), и файл
+// «$Hero%(8).png» (так называет кадры плагин ExtraMovementFrames) приходит с голым «%(». Express не может
+// раскодировать такой адрес и отвечает 400 ещё до нашего кода — игра висит на загрузке.
+// Нашёл и прислал исправление tk344 (issue #1)
+function fixBarePercent(req, res, next) {
+    if (req.url.includes('%')) req.url = req.url.replace(/%(?![0-9A-Fa-f]{2})/g, '%25');
+    next();
+}
+
 // Путь запроса без приставки → путь от GAMES_DIR. Битая %-кодировка — null
 function relFrom(urlPath) {
     try { return decodeURIComponent(urlPath).replace(/^\/+/, ''); } catch { return null; }
@@ -266,6 +276,7 @@ const isGameId = (id) => isSafeSegment(id) && !id.startsWith('.') && !SYSTEM_DIR
 function createGameApp({ secret, store, onSaved = () => {}, onError = async () => {}, publicDir }) {
     const app = express();
     app.disable('x-powered-by');
+    app.use(fixBarePercent);
     app.use(compression());
     app.use((req, res, next) => {
         res.setHeader('Content-Security-Policy', CSP);
@@ -343,4 +354,4 @@ function createGameApp({ secret, store, onSaved = () => {}, onError = async () =
     return app;
 }
 
-module.exports = { createGameApp, serveGameFile, gameKey, keyMatches, revOf, relFrom, isGameId, fixCase, CSP };
+module.exports = { createGameApp, serveGameFile, gameKey, keyMatches, revOf, relFrom, isGameId, fixCase, fixBarePercent, CSP };

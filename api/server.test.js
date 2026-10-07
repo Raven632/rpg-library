@@ -1699,6 +1699,13 @@ test('сервер игр: ключ подходит только к своей 
   });
   assert.deepStrictEqual(await r.json(), { success: true, kept: 'server' });
   assert.deepStrictEqual(saved, [['Game A', 'RPG File2', 'x']]);
+  // Голый «%» в имени картинки (MV 1.6 раскодирует путь сам: «$Hero%(8).png») — не 400 до проверки ключа
+  assert.strictEqual((await fetch(`${base}/g/${'0'.repeat(32)}/Game%20A/img/characters/$Hero%(8).png`)).status, 403);
+  const { fixBarePercent } = require('./src/routes/play.js');
+  const fixed = (url) => { const req = { url }; fixBarePercent(req, null, () => {}); return req.url; };
+  assert.strictEqual(fixed('/g/k/G/img/$Hero%(8).png'), '/g/k/G/img/$Hero%25(8).png');
+  assert.strictEqual(fixed('/g/k/G/img/%24Hero%25(8).png'), '/g/k/G/img/%24Hero%25(8).png', 'закодированное не трогаем');
+  assert.strictEqual(fixed('/g/k/G/100%'), '/g/k/G/100%25');
   // Нет API библиотеки
   assert.strictEqual((await fetch(`${base}/api/games`)).status, 404);
   // Выход из библиотеки меняет ключ сессии — старый ключ игры больше не подходит

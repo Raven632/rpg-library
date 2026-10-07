@@ -11,6 +11,14 @@ All notable changes to this project are documented here.
   SSH. It no longer asks GitHub's API whether the CI is green — a private repository would not answer
   that without a token, and tokens expire.
 
+### Fixed
+
+- **An MV game no longer hangs when an image name contains "%".** RPG Maker MV 1.6 decodes an image
+  path before loading it, so a sprite like `$Hero%(8).png` (the naming of the ExtraMovementFrames
+  plugin) was requested with a bare "%", and the server answered 400 before any of its own code ran.
+  Both the game server and the library now read a "%" not followed by two hex digits as a percent
+  sign. Found and fixed by @tk344 (#1).
+
 ## [6.0] — 2026-09-29
 
 **Upgrading from 5.x:** games now open on their own port, `GAME_PORT` (8081 by default) — open it
