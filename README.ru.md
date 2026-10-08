@@ -3,8 +3,8 @@
 🇬🇧 [English](README.md) | 🇩🇪 [Deutsch](README.de.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/Raven632/rpg-library?style=for-the-badge&color=blue)](https://github.com/Raven632/rpg-library/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-![Tests: Passing](https://img.shields.io/badge/Tests-68_unit_%2B_game_compatibility-brightgreen?style=for-the-badge&logo=jest&logoColor=white)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-yellow.svg?style=for-the-badge)](LICENSE)
+![Tests: Passing](https://img.shields.io/badge/Tests-69_unit_%2B_game_compatibility-brightgreen?style=for-the-badge&logo=jest&logoColor=white)
 
 ![Node.js](https://img.shields.io/badge/Node.js-22.x-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
@@ -169,4 +169,9 @@
 
 ## 📄 Лицензия
 
-[MIT](LICENSE)
+Copyright © 2026 Raven. RPG Library — свободная программа под лицензией
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only): её можно использовать, изучать,
+менять и распространять. Кто распространяет изменённую версию или запускает её для других людей по сети,
+обязан открыть её исходный код под той же лицензией. Выпуск 6.0 (тег v6.0) опубликован под MIT для собственного
+кода; чужой плагин чит-меню, который в нём был, этой лицензией не охватывался и удалён.
+Чужие компоненты и их лицензии — [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

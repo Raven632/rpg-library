@@ -287,7 +287,7 @@ function createGameApp({ secret, store, onSaved = () => {}, onError = async () =
 
     // Наши скрипты для игр — открыты: в них ничего своего
     // rpg-fixes.js с версией в адресе (?v=) — надолго, чит-меню — на сутки
-    for (const file of ['rpg-fixes.js', 'Cheat_Menu.js', 'Cheat_Menu.css']) {
+    for (const file of ['rpg-fixes.js', 'cheats.js']) {
         app.get(`/${file}`, (req, res) => res.sendFile(path.join(publicDir, file), req.query.v ? { maxAge: '365d', immutable: true } : { maxAge: '1d' }));
     }
 

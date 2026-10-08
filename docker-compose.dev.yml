@@ -12,6 +12,7 @@ services:
       - ./api/server.test.js:/app/api/server.test.js
       # Ювелирно прокидываем только один скрипт из папки public
       - ./api/public/rpg-fixes.js:/app/api/public/rpg-fixes.js
+      - ./api/public/cheats.js:/app/api/public/cheats.js
       # Игры прода только для чтения — в dev подключаются симлинками (scripts/dev-link-games.sh).
       # Путь в контейнере совпадает с путём на хосте, чтобы симлинки работали и там, и там.
       - ${PROD_GAMES_DIR:-/srv/rpg-library/games}:${PROD_GAMES_DIR:-/srv/rpg-library/games}:ro

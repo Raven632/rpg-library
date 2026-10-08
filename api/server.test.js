@@ -1845,3 +1845,79 @@ test('галерея: WebP под именем .png (репаки «Compressed»
   // Сцена — папка, кадры в ней — номера
   assert.strictEqual(albumKey('img/pictures/CG/Garden Walk/1.png'), 'img/pictures/CG/Garden Walk');
 });
+
+test('чит-меню (cheats.js): бессмертие только у выбранного героя, скорость держится, сквозь стены, без боёв, переменные, бой', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(path.join(__dirname, 'public', 'cheats.js'), 'utf8');
+  class Game_BattlerBase {
+    constructor() { this.hp = 10; this.mhp = 100; this.mp = 5; this.mmp = 50; this.tp = 0; this.states = []; }
+    setHp(v) { this.hp = v; } setMp(v) { this.mp = v; } setTp(v) { this.tp = v; } maxTp() { return 100; }
+  }
+  class Game_Battler extends Game_BattlerBase { addState(id) { this.states.push(id); } deathStateId() { return 1; } }
+  class Game_Actor extends Game_Battler {
+    constructor(id) { super(); this.id = id; this.level = 5; this.exp = 100; this.params = []; }
+    actorId() { return this.id; } recoverAll() { this.hp = this.mhp; this.mp = this.mmp; } refresh() {}
+    maxLevel() { return 99; } changeLevel(l) { this.level = l; } currentExp() { return this.exp; } changeExp(e) { this.exp = e; }
+    addParam(id, v) { this.params[id] = (this.params[id] || 0) + v; }
+  }
+  // Как в движке: HP 0 при refresh — состояние смерти
+  class Game_Enemy extends Game_Battler { performCollapse() { this.collapsed = true; } isDead() { return this.hp === 0; } refresh() { if (this.hp === 0) this.addState(this.deathStateId()); } }
+  class Game_Player { setMoveSpeed(v) { this.speed = v; } isThrough() { return false; } canEncounter() { return true; }
+    reserveTransfer(...a) { this.transfer = a; } direction() { return 2; } }
+  const hero = new Game_Actor(1);
+  const friend = new Game_Actor(2);
+  const enemies = [new Game_Enemy(), new Game_Enemy()];
+  const vars = {};
+  let gold = 1000;
+  const bag = [];
+  const $gameParty = { members: () => [hero, friend], gainGold: (n) => { gold += n; }, loseGold: (n) => { gold -= n; }, gainItem: (it, n) => bag.push([it.id, n]), inBattle: () => true };
+  const $gameVariables = { setValue: (id, v) => { vars[id] = v; }, value: (id) => vars[id] };
+  const switches = {};
+  const $gameSwitches = { setValue: (id, v) => { switches[id] = v; }, value: (id) => !!switches[id] };
+  const $gameTroop = { aliveMembers: () => enemies.filter((e) => !e.isDead()) };
+  const $gamePlayer = new Game_Player();
+  // Плагин игры переопределил setHp героя и зовёт запомненную базовую функцию (так в アリナと淫魔の呪い) —
+  // бессмертие всё равно держит
+  const baseSetHp = Game_BattlerBase.prototype.setHp;
+  Game_Actor.prototype.setHp = function(v) { baseSetHp.call(this, v); };
+  const win = { addEventListener() {} };
+  new Function('window', 'location', 'localStorage', 'Game_BattlerBase', 'Game_Battler', 'Game_Actor', 'Game_Player',
+    '$gameParty', '$gameVariables', '$gameSwitches', '$gameTroop', '$gamePlayer', src)(win, { search: '' }, { getItem: () => null },
+    Game_BattlerBase, Game_Battler, Game_Actor, Game_Player, $gameParty, $gameVariables, $gameSwitches, $gameTroop, $gamePlayer);
+  const a = win.__rpgCheats.actions;
+
+  a.setGod(hero, true);
+  hero.setHp(3); hero.setMp(0); hero.addState(1); hero.addState(5);
+  friend.setHp(3); friend.addState(1);
+  assert.deepStrictEqual([hero.hp, hero.mp, hero.states, friend.hp, friend.states], [100, 50, [5], 3, [1]], 'смерти и потерь нет только у бессмертного');
+  a.setGod(hero, false);
+  hero.setHp(7);
+  assert.strictEqual(hero.hp, 7);
+
+  a.speed(6); a.lockSpeed(true);
+  $gamePlayer.setMoveSpeed(3);
+  assert.strictEqual($gamePlayer.speed, 6, 'событие скорость не сбросило');
+  a.lockSpeed(false);
+  $gamePlayer.setMoveSpeed(3);
+  assert.strictEqual($gamePlayer.speed, 3);
+  a.noclip(true); a.noEncounters(true);
+  assert.deepStrictEqual([$gamePlayer.isThrough(), $gamePlayer.canEncounter()], [true, false]);
+  a.noclip(false); a.noEncounters(false);
+  assert.deepStrictEqual([$gamePlayer.isThrough(), $gamePlayer.canEncounter()], [false, true]);
+
+  a.setVariable(4, '12'); a.setVariable(5, 'Алиса'); a.setVariable(6, '');
+  assert.deepStrictEqual([vars[4], vars[5], vars[6]], [12, 'Алиса', '']);
+  a.gold(-300); a.gold(50);
+  assert.strictEqual(gold, 750);
+  a.level(hero, -10); a.level(friend, 200); a.exp(hero, 1000); a.param(hero, 2, 10); a.param(hero, 2, -3);
+  assert.deepStrictEqual([hero.level, friend.level, hero.exp, hero.params[2]], [1, 99, 1100, 7], 'уровень — от 1 до предела');
+  a.give({ id: 7 }, 10); a.toggleSwitch(3); a.toggleSwitch(3); a.toggleSwitch(4);
+  assert.deepStrictEqual([bag, switches[3], switches[4]], [[[7, 10]], false, true]);
+  enemies.push(new Game_Enemy());
+  a.enemiesToOne();
+  assert.strictEqual(enemies[2].hp, 1);
+  a.win();
+  assert.ok(enemies.every((e) => e.hp === 0 && e.collapsed && e.states.includes(1)));
+  a.teleport(3, 10, 12);
+  assert.deepStrictEqual($gamePlayer.transfer, [3, 10, 12, 2, 0]);
+});

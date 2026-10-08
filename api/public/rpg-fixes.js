@@ -1364,7 +1364,7 @@ if (!window.__rpgPluginHookInstalled) {
     let showTouchControls = () => {};
     // Наши окна и кнопки поверх игры. И окно чит-меню: без этого его на телефоне нельзя
     // было нажать пальцем
-    const OUR_UI = '#_sys_menu_container, #_mob_ctrl, #_fps_monitor, #_spike_panel, #cheat_menu, #cheat_menu_text';
+    const OUR_UI = '#_sys_menu_container, #_mob_ctrl, #_fps_monitor, #_spike_panel, #_cheats';
     // Поля и кнопки, которые ставит поверх картинки сама игра: «Retry» на экране ошибки
     // загрузки, окна ввода имени и пароля у плагинов
     const GAME_CONTROLS = 'button, input, textarea, select, a[href], label, [contenteditable="true"]';
@@ -2033,7 +2033,7 @@ if (!window.__rpgPluginHookInstalled) {
             // Касания идут в игру, открыто чит-меню или игра поставила в этот угол свои поля и
             // кнопки — угол экрана не забираем под джойстик. Раньше кнопка OK в окне пароля
             // одной из игр попадала под него и не нажималась
-            root.classList.toggle('_zone_off', !!window.__rpgTouchEnabled || !!(window.Cheat_Menu && window.Cheat_Menu.cheat_menu_open) || gameControlsOver(zone));
+            root.classList.toggle('_zone_off', !!window.__rpgTouchEnabled || !!window.__rpgCheatsOpen || gameControlsOver(zone));
         }, 400);
         function gameControlsOver(area) {
             const z = area.getBoundingClientRect();
@@ -2371,70 +2371,19 @@ if (!window.__rpgPluginHookInstalled) {
         addMenuItem({ id: '_sys_touch', section: 'controls', icon: 'tap', label: T.touch, isOn: () => window.__rpgTouchEnabled, onClick: () => window.__toggleRpgTouchMode() });
     }
 
-    // Чит-меню (56 КБ) раньше загружалось в каждую игру сразу, даже если им не
-    // пользовались. Теперь — при первом нажатии пункта в меню ⚙
-    function injectEmeraldCheatMenu() {
+    // Чит-меню (cheats.js — своё, панель поверх игры) — при первом нажатии пункта в меню ⚙: в каждую игру
+    // заранее его не грузим, пользуются им не все
+    function injectCheats() {
         let state = 'idle';   // idle → loading → ready
-
-        function openCheats() {
-            if (!window.Cheat_Menu) return;
-            // Открывается оно только в самой игре: на титульном экране ещё нет героев
-            if (typeof $gameActors === 'undefined' || !$gameActors || !$gameActors._data) {
-                console.warn('[RPG Fixes] Чит-меню открывается после начала игры');
-                return;
-            }
-            window.Cheat_Menu.overlay_openable = true;
-            const ev = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: '1', code: 'Digit1' });
-            Object.defineProperty(ev, 'keyCode', { get: () => 49 });
-            Object.defineProperty(ev, 'which', { get: () => 49 });
-            document.dispatchEvent(ev);
-        }
-
-        // Чит-меню сделано для мыши и клавиатуры. На телефоне его стрелки и пункты не
-        // нажимались: касание поверх картинки игры движок MV гасит (preventDefault), и
-        // браузер не присылал чит-меню нажатие мышью — а само касание уходило в игру,
-        // и герой шёл туда, где нажали. Теперь касания и мышь по чит-меню — только ему
-        function prepareCheatMenu() {
-            const parts = [Cheat_Menu.overlay_box, Cheat_Menu.overlay];
-            parts.forEach(el => ['touchstart', 'touchmove', 'touchend', 'mousedown', 'mouseup', 'click'].forEach(t => {
-                el.addEventListener(t, (e) => e.stopPropagation(), { passive: true });
-            }));
-            // У края экрана меню стоит в 5 пикселях от него — на iPhone лёжа это под вырезом.
-            // Сдвигаем на ширину выреза: ту же, по которой встаёт картинка игры
-            const fit = () => {
-                const probe = document.getElementById('_safe_area_probe');
-                if (!probe) return;
-                const cs = getComputedStyle(probe);
-                const inset = { left: parseFloat(cs.paddingLeft) || 0, right: parseFloat(cs.paddingRight) || 0, top: parseFloat(cs.paddingTop) || 0 };
-                parts.forEach(el => ['left', 'right', 'top'].forEach(side => {
-                    const v = el.style[side];
-                    if (inset[side] && (v === '5px' || v === '-15px')) el.style[side] = (parseFloat(v) + inset[side]) + 'px';
-                }));
-            };
-            const position = Cheat_Menu.position_menu;
-            Cheat_Menu.position_menu = function() { position.apply(this, arguments); fit(); };
-            window.addEventListener('resize', fit);   // своё на resize чит-меню повесило раньше
-            fit();
-            // Подложка у чит-меню высотой 100 пикселей, а пунктов больше: нижние строки
-            // ложились прямо на текст игры. Подложку даём всей таблице
-            const style = document.createElement('style');
-            style.textContent = '#cheat_menu { background: transparent !important; } #cheat_menu_text { background: rgba(10,10,14,0.9); border-radius: 8px; }';
-            document.head.appendChild(style);
-        }
-
         addMenuItem({
             id: '_sys_cheat', section: 'game', icon: 'wand', label: T.cheats,
             onClick: () => {
-                if (state === 'ready') { openCheats(); return; }
+                if (state === 'ready') { if (window.__rpgCheats) window.__rpgCheats.toggle(); return; }
                 if (state === 'loading') return;
                 state = 'loading';
-                const css = document.createElement('link');
-                css.rel = 'stylesheet';
-                css.href = '/Cheat_Menu.css';
-                document.head.appendChild(css);
                 const script = document.createElement('script');
-                script.src = '/Cheat_Menu.js';
-                script.onload = () => { state = 'ready'; prepareCheatMenu(); openCheats(); };
+                script.src = '/cheats.js';
+                script.onload = () => { state = 'ready'; if (window.__rpgCheats) window.__rpgCheats.open(); };
                 script.onerror = () => { state = 'idle'; console.warn('[RPG Fixes] Чит-меню не загрузилось'); };
                 document.body.appendChild(script);
             },
@@ -2827,7 +2776,7 @@ if (!window.__rpgPluginHookInstalled) {
         setupFpsMonitor();
         setupSpikeDiagnostics();
         setupTouchModeToggle();
-        injectEmeraldCheatMenu();
+        injectCheats();
         console.log('✅ RPG-Fixes Ultimate v4.1 успешно загружен!');
     }
 

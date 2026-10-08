@@ -6,6 +6,20 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- **License: GNU AGPL-3.0 instead of MIT.** The project stays free to use, study, change and share, but
+  a changed version that is shared or run for other people over a network must publish its source under
+  the same license. Release 6.0 (tag v6.0) was published under MIT for its own code; the third-party
+  cheat menu plugin it included was never covered. `THIRD_PARTY_NOTICES.md` lists every borrowed component
+  with its license; site logos are marked as their owners' trademarks.
+- **Own cheat menu.** The third-party cheat menu plugin had no license that allowed shipping it, so it
+  was replaced with the project's own (`api/public/cheats.js`), loaded on first use from the ⚙ menu as
+  before. It is a panel in the style of the ⚙ menu, made for touch as well as mouse: party (god mode
+  per hero or for everyone, heal, clear states, level, EXP, stats, gold), items, weapons and armor with
+  search, variables and switches with search by name or number, and the world (hero speed that events
+  cannot reset, walk through walls, no random battles, win a battle at once or bring enemies to 1 HP,
+  teleport to any map and three saved places). Typing and taps in the panel never reach the game;
+  Escape closes it.
+
 - **The server deploys a branch the CI moves.** When the tests and the build of a commit on `main`
   pass, the CI moves the `deploy` branch to it, and `deploy/pull-deploy.sh` deploys that branch over
   SSH. It no longer asks GitHub's API whether the CI is green — a private repository would not answer

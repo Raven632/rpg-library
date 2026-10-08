@@ -3,8 +3,8 @@
 🇬🇧 [English](README.md) | 🇷🇺 [Русский](README.ru.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/Raven632/rpg-library?style=for-the-badge&color=blue)](https://github.com/Raven632/rpg-library/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-![Tests: Passing](https://img.shields.io/badge/Tests-68_unit_%2B_game_compatibility-brightgreen?style=for-the-badge&logo=jest&logoColor=white)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-yellow.svg?style=for-the-badge)](LICENSE)
+![Tests: Passing](https://img.shields.io/badge/Tests-69_unit_%2B_game_compatibility-brightgreen?style=for-the-badge&logo=jest&logoColor=white)
 
 ![Node.js](https://img.shields.io/badge/Node.js-22.x-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
@@ -176,4 +176,9 @@ VNDB. Die Daten werden sofort neu gesucht.
 
 ## 📄 Lizenz
 
-[MIT](LICENSE)
+Copyright © 2026 Raven. RPG Library ist freie Software unter der
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only): Du darfst sie nutzen, untersuchen,
+ändern und weitergeben. Wer eine geänderte Version weitergibt oder sie für andere über ein Netzwerk
+betreibt, muss ihren Quellcode unter derselben Lizenz veröffentlichen. Die Veröffentlichung 6.0 (Tag v6.0)
+erschien für den eigenen Code unter MIT; das enthaltene fremde Cheat-Menü-Plugin war davon nie erfasst und
+wurde entfernt. Übernommene Bestandteile und ihre Lizenzen — [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
